@@ -50,33 +50,30 @@ def delete(msg):
 def hello(msg):
     id = msg.chat.id
 
-    markup_inline = types.InlineKeyboardMarkup()
-    item_rolls = types.InlineKeyboardButton(text='Хочу роллы', callback_data='Хочу роллы')
-    item_woks = types.InlineKeyboardButton(text='Хочу вок', callback_data='Хочу вок')
-    item_set = types.InlineKeyboardButton(text='Хочу Сет', callback_data='Хочу сет')
-
-    markup_inline.add(item_rolls, item_woks, item_set)
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    bt_rolls = types.KeyboardButton(text='Хочу роллы')
+    bt_wok = types.KeyboardButton(text='Хочу вок')
+    bt_set = types.KeyboardButton(text='Хочу сет')
+    kb.add(bt_set, bt_rolls, bt_wok)
 
     bot.send_message(id, '''Приветсвую вас! Я бот-помощник компании Yandex Sushi
                          Мы рады приветсвовать вас!
                          Для заказа роллов напишите: "Хочу роллы"
                          Для заказа вока напишите: "Хочу вок"
                          Для заказа наборов суши напишите: "Хочу сет"
-                         ''', reply_markup=markup_inline)
-
-
-@bot.callback_query_handlers(func=lambda call: True)
-def answer(call):
-    id = call.mesage.chat.id
-    if call.data == 'Хочу роллы':
-        bot.send_message(id, 'Хочу роллы')
-    if call.data == 'Хочу вок':
-        bot.send_message(id, 'Хочу вок')
-    if call.data == 'Хочу сет':
-        bot.send_message(id, 'Хочу сет')
+                         ''', reply_markup=kb)
 
 
 @bot.message_handler(content_types=['text'])
+def answer(message):
+    id = message.chat.id
+    bot.send_message(id, 'Прекрасный выбор! Мы можем вам предложить наш ассортимент:')
+    pic = open('brosh_pic/rolls_pic.jpg', 'rb')
+    bot.send_photo(id, pic, caption='желаемый текст')
+
+
+
+'''@bot.message_handler(content_types=['text'])
 def get_text(message):
     global user_name, number_phone, order
     id = message.chat.id
@@ -93,7 +90,7 @@ def get_text(message):
         bot.send_message(id, 'Спасибо за внимание')
     else:
         bot.send_message(id, f'{message.text}, Приятно познакомитсья! Укажите ваш номер телефона, пожалуйста.')
-        user_name = message.text
+        user_name = message.text'''
 
 
 if __name__ == '__main__':
