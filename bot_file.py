@@ -149,6 +149,7 @@ _________________
         elif user_name and not number_phone:
             if check_num(message.text):
                 connect = sqlite3.connect('eat.db')
+
                 cursor = connect.cursor()
                 cursor.execute(f"""SELECT name FROM rolls""")
                 data = cursor.fetchall()
