@@ -1,7 +1,12 @@
+import json
+import pprint
+import random
+
 import config
 import sqlite3
 import telebot
 import re
+import requests
 from telebot import types
 
 
@@ -32,7 +37,8 @@ def start(message):
         bt_rolls = types.KeyboardButton(text='Хочу роллы')
         bt_wok = types.KeyboardButton(text='Хочу вок')
         bt_set = types.KeyboardButton(text='Хочу сет')
-        kb.add(bt_set, bt_rolls, bt_wok)
+        bt_ju = types.KeyboardButton(text='Хочу морс')
+        kb.add(bt_set, bt_rolls, bt_wok, bt_ju)
 
         bot.send_message(id, '''Добрый день ! 😃 
 Я - бот-помощник(Yandex Sushi)
@@ -40,6 +46,7 @@ def start(message):
 •роллы
 •вок
 •сет
+•морс
 Для заказа напишите ,,Хочу …(выбранное вами блюдо)’’
 ''', reply_markup=kb)
         FLAG = 'continue_start'
@@ -88,23 +95,8 @@ def get_text(message):
         bt_rolls = types.KeyboardButton(text='Хочу роллы')
         bt_wok = types.KeyboardButton(text='Хочу вок')
         bt_set = types.KeyboardButton(text='Хочу сет')
-        kb.add(bt_set, bt_rolls, bt_wok)
-
-        bot.send_message(id, '''Добрый день ! 😃 
-        Я - бот-помощник(Yandex Sushi)
-        Я могу вас предоставить:
-        •роллы
-        •вок
-        •сет
-        Для заказа напишите ,,Хочу …(выбранное вами блюдо)’’
-                                     ''', reply_markup=kb)
-        FLAG = 'continue_start'
-    if FLAG == '':
-        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-        bt_rolls = types.KeyboardButton(text='Хочу роллы')
-        bt_wok = types.KeyboardButton(text='Хочу вок')
-        bt_set = types.KeyboardButton(text='Хочу сет')
-        kb.add(bt_set, bt_rolls, bt_wok)
+        bt_ju = types.KeyboardButton(text='Хочу морс')
+        kb.add(bt_set, bt_rolls, bt_wok, bt_ju)
 
         bot.send_message(id, '''Добрый день ! 😃 
 Я - бот-помощник(Yandex Sushi)
@@ -112,6 +104,25 @@ def get_text(message):
 •роллы
 •вок
 •сет
+•морс
+Для заказа напишите ,,Хочу …(выбранное вами блюдо)’’
+                                     ''', reply_markup=kb)
+        FLAG = 'continue_start'
+    if FLAG == '':
+        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+        bt_rolls = types.KeyboardButton(text='Хочу роллы')
+        bt_wok = types.KeyboardButton(text='Хочу вок')
+        bt_set = types.KeyboardButton(text='Хочу сет')
+        bt_ju = types.KeyboardButton(text='Хочу морс')
+        kb.add(bt_set, bt_rolls, bt_wok, bt_ju)
+
+        bot.send_message(id, '''Добрый день ! 😃 
+Я - бот-помощник(Yandex Sushi)
+Я могу вас предоставить:
+•роллы
+•вок
+•сет
+•морс
 Для заказа напишите ,,Хочу …(выбранное вами блюдо)’’
                              ''', reply_markup=kb)
         FLAG = 'continue_start'
@@ -133,25 +144,55 @@ def get_text(message):
                 return True
         kb_start = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
         bt_start = types.KeyboardButton(text='/start')
+        film_kb = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+        yes_bt = types.KeyboardButton(text='Посмотреть фильм🎥')
+        no_bt = types.KeyboardButton(text='Нет, спасибо')
+        film_kb.add(yes_bt, no_bt)
         kb_start.add(bt_start)
         kbb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
         bt_yes = types.KeyboardButton(text='Хочу!')
         bt_not = types.KeyboardButton(text='Нет, спасибо')
         kbb.add(bt_yes, bt_not)
+        kb_smile = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        btfl = types.KeyboardButton(text='😍')
+        kb_smile.add(btfl)
         n = ''
         for i in order:
             n += f'{i[0]} - {i[1]}x\n'
-        if message.text.lower() == 'да, все верно':
+        if message.text == '😍':
+            bot.send_message(id, 'Мы знали что вам понравится! <3', reply_markup=kb_start)
+        elif message.text.lower() == 'да, все верно':
             strin = f"""Благодарим за заказ !😉
 В вашем заказе находится:\n
 {n}
 ____________________
 Заказ обрабатывается, ждите дальнейшего оповещения по номеру, который вы указали в заказе ! 😃"""
             bot.send_message(id, strin)
+            f = True
             if not verif_order():
                 bot.send_message(id, 'Вы совершили 1 заказ в нашем магазине! '
                                      'Вы хотите учавствовать в бонусной системе нашего ресторана?',
                                  reply_markup=kbb)
+                f = False
+            if f:
+                bot.send_message(id, 'Мы можем посоветовать вам фильм🎥', reply_markup=film_kb)
+
+        elif message.text.lower() == 'посмотреть фильм🎥':
+            res_city = requests.get(
+                f'https://imdb-api.com/ru/API/Top250Movies/k_z7ny8kho'
+            )
+            cash = json.loads(res_city.content)['items']
+            strok = 'Под приятные роллы можно и приятный фильм посмотреть😜\n' \
+                    'Вот что мы можем предложить😉\n'
+            for i in range(3):
+                create_strok = '\n🔥'
+                val = random.choice(cash)
+                create_strok += f"{val['fullTitle']}\n"
+                create_strok += f"Рейтинг: {val['imDbRating']}\n"
+                create_strok += f"Год выхода: {val['year']}\n"
+                strok += create_strok
+            photo = open('brosh_pic/film.jpg', 'rb')
+            bot.send_photo(id, photo, caption=strok, reply_markup=kb_smile)
         elif message.text.lower() == 'хочу!':
             bot.send_message(id, 'Прекрасно! Сейчас мы вас зарегестрируем!')
 
@@ -190,7 +231,7 @@ ____________________
             bot.send_message(id, 'Для изменения заказа, вам надо сделать повторный заказ.', reply_markup=kb_start)
             FLAG = ''
         elif message.text.lower() == 'нет, спасибо':
-            bot.send_message(id, 'Хорошо, ожидайте звонка от оператора!\nСпасибо за заказ!')
+            bot.send_message(id, 'Хорошо, ожидайте звонка от оператора!\nСпасибо за заказ!', reply_markup=kb_start)
             FLAG = ''
 
     elif FLAG == 'continue_start':
@@ -353,6 +394,59 @@ ____________________
                 bot.send_message(id, 'Прекрасный выбор!')
                 bot.send_message(id, 'Как я могу к вам обращаться?', reply_markup=kb_skip)
                 FLAG = 'continue_set'
+            print('aaaa')
+        if message.text.lower() == 'хочу морс':
+            values = []
+            kb_skip = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+            bt_s = types.KeyboardButton(text='-поля для заполнения пользователем-')
+            kb_skip.add(bt_s)
+            if user_name:
+                order.clear()
+                connect = sqlite3.connect('eat.db')
+                cursor = connect.cursor()
+                cursor.execute(f"""SELECT name, cost, count FROM juice""")
+                data = cursor.fetchall()
+                if message.text in values:
+                    f = False
+                    for i in order:
+                        if i[0] == message.text:
+                            cos = 0
+                            for b in data:
+                                if message.text == b[0]:
+                                    cos = b[1]
+                            order[order.index(i)][1] += 1
+                            order[order.index(i)][2] = cos
+                            print(i)
+                            f = True
+                    if not f:
+                        cos = 0
+                        for b in data:
+                            if message.text == b[0]:
+                                cos = b[1]
+                        order.append([message.text, 1, cos])
+                    bot.send_message(id, 'Мы записали, что-то еще?')
+                else:
+                    bot.send_message(id, 'Такого блюда нет в наших списках.')
+                n = ''
+                for i in order:
+                    if i:
+                        n += f'\n🔻{i[0]}\n Цена:    {i[1]}₽\n Количество в наборе: {i[2]}шт.\n'
+                bot.send_message(id, 'Прекрасный выбор!')
+                pic = open('brosh_pic/juice_pic.jpg', 'rb')
+                bot.send_photo(id, pic)
+                kb_juic = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+                bt_kl = types.KeyboardButton(text='Морс клюква')
+                bt_brus = types.KeyboardButton(text='Морс брусника')
+                bt_blc = types.KeyboardButton(text='Морс черная смородина')
+                bt_obl = types.KeyboardButton(text='Морс облепиха-мед имбирь')
+                bt_end = types.KeyboardButton(text='На этом все')
+                kb_juic.add(bt_kl, bt_brus, bt_blc, bt_obl, bt_end)
+                bot.send_message(id, f"""Вот что мы можем вам предложить:{n}""", reply_markup=kb_juic)
+                FLAG = 'continue_juice'
+            else:
+                bot.send_message(id, 'Прекрасный выбор!')
+                bot.send_message(id, 'Как я могу к вам обращаться?', reply_markup=kb_skip)
+                FLAG = 'continue_juice'
             print('aaaa')
     elif FLAG == 'continue_roll':
         if not values:
@@ -653,8 +747,107 @@ _____________
             else:
                 bot.send_message(id, 'Такого блюда нет в наших списках.')
 
-    elif FLAG == '':
-        pass
+    elif FLAG == 'continue_juice':
+        if not values:
+            connect = sqlite3.connect('eat.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT name FROM juice""")
+            values = [i[0] for i in cursor.fetchall()]
+            print(values)
+        if message.text == '-поля для заполнения пользователем-':
+            bot.send_message(id, 'Введите данные вручную.')
+        elif message.text.lower() == 'да':
+            kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+            bt_rolls = types.KeyboardButton(text='Хочу роллы')
+            bt_wok = types.KeyboardButton(text='Хочу вок')
+            bt_set = types.KeyboardButton(text='Хочу сет')
+            bt_ju = types.KeyboardButton(text='Хочу морс')
+            kb.add(bt_set, bt_rolls, bt_wok, bt_ju)
+
+            bot.send_message(id, '''Приветсвую вас! Я бот-помощник компании Yandex Sushi
+Мы рады приветсвовать вас!
+Для заказа роллов напишите: "Хочу роллы"
+Для заказа вока напишите: "Хочу вок"
+Для заказа наборов суши напишите: "Хочу сет"
+Для заказа напитков: "Хочу морс"
+''', reply_markup=kb)
+            FLAG = 'continue_start'
+        elif message.text.lower() == 'на этом все':
+            kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+            bt_yes = types.KeyboardButton(text='Да, все верно')
+            bt_not = types.KeyboardButton(text='Изменить')
+            kb.add(bt_yes, bt_not)
+            count = 0
+            n = ''
+            for i in order:
+                n += f'\n🔻 {i[0]} \n Количество:    {i[1]}шт.\n За {i[1]}шт.: {i[2] * i[1]}₽\n'
+                count += i[2] * i[1]
+            stri = f"""Прекрасно! Что же у нас в корзине?
+_____________
+{n}
+
+Итого к оплате:  {count} руб.
+
+_____________
+
+Оформить заказ ? Он будет сразу передан на кухню !😃"""
+            bot.send_message(id, stri, reply_markup=kb)
+            FLAG = 'continue_oform'
+        elif not user_name:
+            user_name = message.text
+            bot.send_message(id, f'{user_name.capitalize()}, введите ваш номер телефона')
+        elif user_name and not number_phone:
+            if check_num(message.text):
+                kb_juic = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+                bt_kl = types.KeyboardButton(text='Морс клюква')
+                bt_brus = types.KeyboardButton(text='Морс брусника')
+                bt_blc = types.KeyboardButton(text='Морс черная смородина')
+                bt_obl = types.KeyboardButton(text='Морс облепиха-мед имбирь')
+                bt_end = types.KeyboardButton(text='На этом все')
+                kb_juic.add(bt_kl, bt_brus, bt_blc, bt_obl, bt_end)
+                connect = sqlite3.connect('eat.db')
+                cursor = connect.cursor()
+                cursor.execute(f"""SELECT name, cost, count FROM juice""")
+                data = cursor.fetchall()
+                print(data)
+                n = ''
+                for i in data:
+                    if i:
+                        n += f'\n🔻{i[0]}\n Цена:    {i[1]}₽\n Количество в наборе: {i[2]}шт.\n'
+                bot.send_message(id, 'Хорошо, что бы вы хотели заказать?')
+                pic = open('brosh_pic/juice_pic.jpg', 'rb')
+                bot.send_photo(id, pic)
+                bot.send_message(id, f"""Вот что мы можем вам предложить:
+            {n}""", reply_markup=kb_juic)
+                number_phone = message.text
+            else:
+                bot.send_message(id, 'Номер некорректен...')
+        elif user_name and number_phone and cont_order:
+            connect = sqlite3.connect('eat.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT name, cost, count FROM juice""")
+            data = cursor.fetchall()
+            if message.text in values:
+                f = False
+                for i in order:
+                    if i[0] == message.text:
+                        cos = 0
+                        for b in data:
+                            if message.text == b[0]:
+                                cos = b[1]
+                        order[order.index(i)][1] += 1
+                        order[order.index(i)][2] = cos
+                        print(i)
+                        f = True
+                if not f:
+                    cos = 0
+                    for b in data:
+                        if message.text == b[0]:
+                            cos = b[1]
+                    order.append([message.text, 1, cos])
+                bot.send_message(id, 'Мы записали, что-то еще?')
+            else:
+                bot.send_message(id, 'Такого блюда нет в наших списках.')
     elif FLAG == '':
         pass
     else:
