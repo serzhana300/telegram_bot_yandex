@@ -31,6 +31,24 @@ bot = telebot.TeleBot(config.TOKEN)
 user_name, number_phone, order = '', '', []
 
 
+@bot.message_handler(commands=['admin_console'])
+# настройка администратора
+def admin_console(message):
+    global FLAG
+    id = message.chat.id
+
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+
+    bt_rolls = types.KeyboardButton(text='***')
+    kb.add(bt_rolls)
+
+    bot.send_message(id, '''
+This console was created to assign an account to accept orders.
+Please enter the password key to assign this account to the administrative.
+''', reply_markup=kb)
+
+    FLAG = 'ADMIN'
+
 @bot.message_handler(commands=['start'])
 # начало общения с пользователем
 
@@ -38,7 +56,7 @@ def start(message):
     global FLAG
     id = message.chat.id
 
-    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 
     bt_rolls = types.KeyboardButton(text='Хочу роллы')
     bt_wok = types.KeyboardButton(text='Хочу вок')
@@ -101,7 +119,7 @@ def get_text(message):
     global user_name, number_phone, order, FLAG, values
     id = message.chat.id
     if message.text == '/start':
-        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 
         bt_rolls = types.KeyboardButton(text='Хочу роллы')
         bt_wok = types.KeyboardButton(text='Хочу вок')
@@ -122,7 +140,7 @@ def get_text(message):
         FLAG = 'continue_start'
 
     if FLAG == '':
-        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
         bt_rolls = types.KeyboardButton(text='Хочу роллы')
         bt_wok = types.KeyboardButton(text='Хочу вок')
         bt_set = types.KeyboardButton(text='Хочу сет')
@@ -140,8 +158,28 @@ def get_text(message):
                              ''', reply_markup=kb)
         FLAG = 'continue_start'
 
-    elif FLAG == 'continue_oform':
+    elif FLAG == 'ADMIN':
+        if message.text == '***':
+            pass
+        elif message.text == 'n-X5-G-rwl-C':
 
+            connect = sqlite3.connect('users.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT ID_ADMIN FROM ADMIN""")
+            data = cursor.fetchall()
+            f = data[0][0]
+            cursor.execute(f"""DELETE FROM ADMIN
+      WHERE ID_ADMIN = {f};""")
+            cursor.execute(f"""INSERT INTO ADMIN (
+                      ID_ADMIN
+                  )
+                  VALUES (
+                      {id}
+                  );""")
+            connect.commit()
+            print(id)
+            bot.send_message(id, 'This account is assigned by the bot administrator.')
+    elif FLAG == 'continue_oform':
         def verif_order():
             u_id = message.chat.id
 
@@ -188,6 +226,14 @@ def get_text(message):
 ____________________
 Заказ обрабатывается, ждите дальнейшего оповещения по номеру, который вы указали в заказе ! 😃"""
             bot.send_message(id, strin)
+            connect = sqlite3.connect('users.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT ID_ADMIN FROM ADMIN""")
+            data = cursor.fetchall()
+            val = data[0][0]
+            bot.send_message(val, f"""Имя: {user_name},
+Номер телефона: {number_phone},
+Заказ: {n}""")
             f = True
 
             if not verif_order():
@@ -295,7 +341,8 @@ ____________________
                         order.append([message.text, 1, cos])
                     bot.send_message(id, 'Мы записали, что-то еще?')
                 else:
-                    bot.send_message(id, 'Такого блюда нет в наших списках.')
+                    if 'хочу' not in str(message.text.lower()).split():
+                        bot.send_message(id, 'Такого блюда нет в наших списках.')
                 n = ''
                 for i in order:
                     if i:
@@ -356,7 +403,8 @@ ____________________
                     bot.send_message(id, 'Мы записали, что-то еще?')
 
                 else:
-                    bot.send_message(id, 'Такого блюда нет в наших списках.')
+                    if 'хочу' not in str(message.text.lower()).split():
+                        bot.send_message(id, 'Такого блюда нет в наших списках.')
                 n = ''
 
                 for i in order:
@@ -416,7 +464,8 @@ ____________________
                     bot.send_message(id, 'Мы записали, что-то еще?')
 
                 else:
-                    bot.send_message(id, 'Такого блюда нет в наших списках.')
+                    if 'хочу' not in str(message.text.lower()).split():
+                        bot.send_message(id, 'Такого блюда нет в наших списках.')
                 n = ''
 
                 for i in order:
@@ -475,7 +524,8 @@ ____________________
                         order.append([message.text, 1, cos])
                     bot.send_message(id, 'Мы записали, что-то еще?')
                 else:
-                    bot.send_message(id, 'Такого блюда нет в наших списках.')
+                    if 'хочу' not in str(message.text.lower()).split():
+                        bot.send_message(id, 'Такого блюда нет в наших списках.')
                 n = ''
 
                 for i in order:
@@ -546,6 +596,46 @@ _____________
 
 Оформить заказ ? Он будет сразу передан на кухню !😃"""
             bot.send_message(id, stri, reply_markup=kb)
+            bot.send_message(id, "Если вы есть в нашкй бонусной системе, "
+                                 "то после получения заказа мы зачислим вам 5% бонусных рублей от стоимости заказа!")
+
+            connect = sqlite3.connect('users.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT user_id,
+                   phone_number,
+                   name_pers,
+                   balance
+              FROM users WHERE user_id == '{id}';""")
+            data = cursor.fetchall()
+
+            if not data:
+                bot.send_message(message.chat.id, 'Вы не учавствуете в системе.\n'
+                                                  'Сделайте 1 заказ, чтобы стать участником системы')
+            else:
+                bot.send_message(message.chat.id, f'Вы уже учавствуете в системе бонусов.\nВаше имя: {data[0][2]}\n'
+                                                  f'Ваш номер телефона: {data[0][1]}\n'
+                                                  f'Ваш баланс: {data[0][3]}')
+                bonus = round((count * 1.05) - count)
+                bot.send_message(id, f'После получения данного заказа вам будет начисленно: {bonus} руб.')
+                b = data[0][3] + bonus
+                cursor.execute(f"""
+DELETE FROM users WHERE user_id = {id}
+""")
+                cursor.execute(f"""
+INSERT INTO users (
+                      user_id,
+                      phone_number,
+                      name_pers,
+                      balance
+                  )
+                  VALUES (
+                      {id},
+                      'phone_number',
+                      'name_pers',
+                      {b}
+                  );
+""")
+                connect.commit()
             FLAG = 'continue_oform'
 
         elif not user_name:
@@ -659,6 +749,46 @@ _____________
 
 Оформить заказ ? Он будет сразу передан на кухню !😃"""
             bot.send_message(id, stri, reply_markup=kb)
+            bot.send_message(id, "Если вы есть в нашкй бонусной системе, "
+                                 "то после получения заказа мы зачислим вам 5% бонусных рублей от стоимости заказа!")
+
+            connect = sqlite3.connect('users.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT user_id,
+                               phone_number,
+                               name_pers,
+                               balance
+                          FROM users WHERE user_id == '{id}';""")
+            data = cursor.fetchall()
+
+            if not data:
+                bot.send_message(message.chat.id, 'Вы не учавствуете в системе.\n'
+                                                  'Сделайте 1 заказ, чтобы стать участником системы')
+            else:
+                bot.send_message(message.chat.id, f'Вы уже учавствуете в системе бонусов.\nВаше имя: {data[0][2]}\n'
+                                                  f'Ваш номер телефона: {data[0][1]}\n'
+                                                  f'Ваш баланс: {data[0][3]}')
+                bonus = round((count * 1.05) - count)
+                bot.send_message(id, f'После получения данного заказа вам будет начисленно: {bonus} руб.')
+                b = data[0][3] + bonus
+                cursor.execute(f"""
+                DELETE FROM users WHERE user_id = {id}
+                """)
+                cursor.execute(f"""
+                INSERT INTO users (
+                                      user_id,
+                                      phone_number,
+                                      name_pers,
+                                      balance
+                                  )
+                                  VALUES (
+                                      {id},
+                                      'phone_number',
+                                      'name_pers',
+                                      {b}
+                                  );
+                """)
+                connect.commit()
             FLAG = 'continue_oform'
 
         elif not user_name:
@@ -779,6 +909,47 @@ _____________
 
 Оформить заказ ? Он будет сразу передан на кухню !😃"""
             bot.send_message(id, stri, reply_markup=kb)
+            bot.send_message(id, "Если вы есть в нашкй бонусной системе, "
+                                 "то после получения заказа мы зачислим вам 5% бонусных рублей от стоимости заказа!")
+
+            connect = sqlite3.connect('users.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT user_id,
+                               phone_number,
+                               name_pers,
+                               balance
+                          FROM users WHERE user_id == '{id}';""")
+            data = cursor.fetchall()
+
+            if not data:
+                bot.send_message(message.chat.id, 'Вы не учавствуете в системе.\n'
+                                                  'Сделайте 1 заказ, чтобы стать участником системы')
+            else:
+                bot.send_message(message.chat.id, f'Вы уже учавствуете в системе бонусов.\nВаше имя: {data[0][2]}\n'
+                                                  f'Ваш номер телефона: {data[0][1]}\n'
+                                                  f'Ваш баланс: {data[0][3]}')
+                bonus = round((count * 1.05) - count)
+                bot.send_message(id, f'После получения данного заказа вам будет начисленно: {bonus} руб.')
+                b = data[0][3] + bonus
+                cursor.execute(f"""
+                DELETE FROM users WHERE user_id = {id}
+                """)
+                cursor.execute(f"""
+                INSERT INTO users (
+                                      user_id,
+                                      phone_number,
+                                      name_pers,
+                                      balance
+                                  )
+                                  VALUES (
+                                      {id},
+                                      'phone_number',
+                                      'name_pers',
+                                      {b}
+                                  );
+                """)
+                connect.commit()
+                connect.commit()
             FLAG = 'continue_oform'
 
         elif not user_name:
@@ -901,6 +1072,46 @@ _____________
 
 Оформить заказ ? Он будет сразу передан на кухню !😃"""
             bot.send_message(id, stri, reply_markup=kb)
+            bot.send_message(id, "Если вы есть в нашкй бонусной системе, "
+                                 "то после получения заказа мы зачислим вам 5% бонусных рублей от стоимости заказа!")
+
+            connect = sqlite3.connect('users.db')
+            cursor = connect.cursor()
+            cursor.execute(f"""SELECT user_id,
+                                           phone_number,
+                                           name_pers,
+                                           balance
+                                      FROM users WHERE user_id == '{id}';""")
+            data = cursor.fetchall()
+
+            if not data:
+                bot.send_message(message.chat.id, 'Вы не учавствуете в системе.\n'
+                                                  'Сделайте 1 заказ, чтобы стать участником системы')
+            else:
+                bot.send_message(message.chat.id, f'Вы уже учавствуете в системе бонусов.\nВаше имя: {data[0][2]}\n'
+                                                  f'Ваш номер телефона: {data[0][1]}\n'
+                                                  f'Ваш баланс: {data[0][3]}')
+                bonus = round((count * 1.05) - count)
+                bot.send_message(id, f'После получения данного заказа вам будет начисленно: {bonus} руб.')
+                b = data[0][3] + bonus
+                cursor.execute(f"""
+                            DELETE FROM users WHERE user_id = {id}
+                            """)
+                cursor.execute(f"""
+                            INSERT INTO users (
+                                                  user_id,
+                                                  phone_number,
+                                                  name_pers,
+                                                  balance
+                                              )
+                                              VALUES (
+                                                  {id},
+                                                  'phone_number',
+                                                  'name_pers',
+                                                  {b}
+                                              );
+                            """)
+                connect.commit()
             FLAG = 'continue_oform'
 
         elif not user_name:
