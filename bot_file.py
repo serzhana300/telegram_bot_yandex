@@ -365,7 +365,6 @@ ____________________
                 bot.send_message(id, 'Прекрасный выбор!')
                 bot.send_message(id, 'Как я могу к вам обращаться?', reply_markup=kb_skip)
                 FLAG = 'continue_roll'
-            print('aaaa')
 
         if message.text.lower() == 'хочу вок':
             values = []
