@@ -287,7 +287,7 @@ ____________________
                                   '{u_id}',
                                   '{number_phone}',
                                   '{user_name}',
-                                  '{'0'}'
+                                  '{0}'
                               );""")
                 bot.send_message(message.chat.id, 'Спасибо за участие в системе!')
                 bot.send_message(message.chat.id, f'Вы учавствуете в системе бонусов.\nВаше имя: {user_name}\n'
@@ -626,13 +626,12 @@ INSERT INTO users (
                       phone_number,
                       name_pers,
                       balance
-                  )
-                  VALUES (
-                      {id},
-                      'phone_number',
-                      'name_pers',
-                      {b}
-                  );
+                                  VALUES (
+                                    {id},
+                                    '{number_phone}',
+                                    '{user_name}',
+                                    {b}
+                                  );
 """)
                 connect.commit()
             FLAG = 'continue_oform'
@@ -781,10 +780,10 @@ _____________
                                       balance
                                   )
                                   VALUES (
-                                      {id},
-                                      'phone_number',
-                                      'name_pers',
-                                      {b}
+                                    {id},
+                                    '{number_phone}',
+                                    '{user_name}',
+                                    {b}
                                   );
                 """)
                 connect.commit()
@@ -941,10 +940,10 @@ _____________
                                       balance
                                   )
                                   VALUES (
-                                      {id},
-                                      'phone_number',
-                                      'name_pers',
-                                      {b}
+                                    {id},
+                                    '{number_phone}',
+                                    '{user_name}',
+                                    {b}
                                   );
                 """)
                 connect.commit()
@@ -1105,8 +1104,8 @@ _____________
                                               )
                                               VALUES (
                                                   {id},
-                                                  'phone_number',
-                                                  'name_pers',
+                                                  '{number_phone}',
+                                                  '{user_name}',
                                                   {b}
                                               );
                             """)
