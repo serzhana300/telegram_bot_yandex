@@ -50,7 +50,10 @@ Please enter the password key to assign this account to the administrative.
 # начало общения с пользователем
 
 def start(message):
-    global FLAG
+    global FLAG, user_name, number_phone, order
+    user_name = ''
+    number_phone = ''
+    order = []
     id = message.chat.id
 
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
@@ -117,6 +120,9 @@ def get_text(message):
     try:
         id = message.chat.id
         if message.text == '/start':
+            user_name = ''
+            number_phone = ''
+            order = []
             kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 
             bt_rolls = types.KeyboardButton(text='Хочу роллы')
@@ -138,6 +144,9 @@ def get_text(message):
             FLAG = 'continue_start'
 
         if FLAG == '':
+            user_name = ''
+            number_phone = ''
+            order = []
             kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
             bt_rolls = types.KeyboardButton(text='Хочу роллы')
             bt_wok = types.KeyboardButton(text='Хочу вок')
